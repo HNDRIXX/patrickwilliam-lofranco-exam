@@ -78,7 +78,7 @@
             channels: [],
             videos: [],
             videosPerPage: 20,
-            currentPage: 0,
+            currentPage: parseInt(localStorage.getItem('currentPage')) || 0,
         },
         computed: {
             totalPages() { return Math.ceil(this.videos.length / this.videosPerPage); },
@@ -104,8 +104,10 @@
                 if (this.currentPage < this.totalPages - 1) { this.currentPage++; }
             },
             changePageWithScroll(pageNumber) {
+                this.currentPage = pageNumber;
+                localStorage.setItem('currentPage', pageNumber);
+
                 if (pageNumber >= 0 && pageNumber < this.totalPages) {
-                    this.currentPage = pageNumber;
                     this.scrollToTop();
                 }
             },

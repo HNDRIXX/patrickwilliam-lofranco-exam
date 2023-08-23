@@ -1,9 +1,17 @@
 <?php
     $youtube_api_key = 'AIzaSyDVF2U_RQuQcBzzQ81bpvjoYZMpdqepVvs';
-    $channel_id = 'UCWJ2lWNubArHWmf3FIHbfcQ';
+    $channel_id = 'UC5664f6TkaeHgwBly50DWZQ';
 
+    // NBA
+    // UCWJ2lWNubArHWmf3FIHbfcQ
+
+    // News Channel
+    // UC5664f6TkaeHgwBly50DWZQ
+    
+    // Marvel
+    // UCvC4D8onUfXzvjTOM-dBfEA
     try {
-        $conn = new PDO("pgsql:host=localhost;dbname=yt-db", 'postgres', '09082612');
+        $conn = new PDO("pgsql:host=localhost;dbname=youtube-db", 'postgres', '09082612');
         $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
         $channel_api_url = "https://www.googleapis.com/youtube/v3/channels?part=snippet&id={$channel_id}&key={$youtube_api_key}";
@@ -38,17 +46,17 @@
         }
 
         if (!empty($channel_data['items']) || !empty($video_data['items'])) {
-            $truncate = "TRUNCATE TABLE youtube_channel_videos; TRUNCATE TABLE youtube_channels;";
-            $conn->exec($truncate);
-            
+            $channel_id = $conn->query("SELECT COUNT(*) FROM youtube_channels")->fetchColumn() + 1;
+
             $profile_pic = $channel_data['items'][0]['snippet']['thumbnails']['high']['url'];
             $channel_name = $channel_data['items'][0]['snippet']['title'];
             $description = $channel_data['items'][0]['snippet']['description'];
 
-            $sql = "INSERT INTO youtube_channels (channel_name, profile_pic, description) 
-            VALUES (:channel_name, :profile_pic, :description)";
+            $sql = "INSERT INTO youtube_channels (id, channel_name, profile_pic, description) 
+            VALUES (:channel_id, :channel_name, :profile_pic, :description)";
 
             $query = $conn->prepare($sql);
+            $query->bindParam(':channel_id', $channel_id);
             $query->bindParam(':channel_name', $channel_name);
             $query->bindParam(':profile_pic', $profile_pic);
             $query->bindParam(':description', $description);
@@ -60,9 +68,10 @@
                 $video_link = "https://www.youtube.com/watch?v={$video['id']['videoId']}";
                 $video_thumbnail = $video['snippet']['thumbnails']['high']['url'];
     
-                $sql = "INSERT INTO youtube_channel_videos (video_title, video_desc, video_link, video_thumbnail) VALUES (:title, :description, :link, :thumbnail)";
+                $sql = "INSERT INTO youtube_channel_videos (channel_id, video_title, video_desc, video_link, video_thumbnail) VALUES (:channel_id, :title, :description, :link, :thumbnail)";
     
                 $query = $conn->prepare($sql);
+                $query->bindParam(':channel_id', $channel_id);
                 $query->bindParam(':title', $video_title);
                 $query->bindParam(':description', $video_description);
                 $query->bindParam(':link', $video_link);

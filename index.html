@@ -11,63 +11,79 @@
 </head>
 <body>
     <div id="app">
-        <div class="">
-            <div v-for="channel in channels" class="channel-wrapper text-white">
-                <img :src="channel.profile_pic" :alt="channel.channel_name + ' Profile Pic'" class="channel-img">
+        <div class="dropdown position-absolute" id="dropdown">
+            <a class="dropdown-toggle text-white" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa-brands fa-youtube justify-content-center align-item-center"></i>
+                <span id="channelText">Channels</span>
+            </a>
+            
+            <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                <li v-for="channel in channels" :key="channel.id">
+                    <a class="dropdown-item" @click="selectChannel(channel)" href="#">{{ channel.channel_name }}</a>
+                </li>
+            </ul>
+        </div>
 
-                <div class="channel-text">
-                    <p class="channel-name pb-3">{{ channel.channel_name }}</p>
-                    <p class="channel-desc">{{ channel.description }}</p>
-                </div>
+        <div v-if="channelsSelected" class="channel-wrapper text-white">
+            <img :src="channelsSelected.profile_pic" class="channel-img" draggable="false">
+
+            <div class="channel-text">
+                <p class="channel-name pb-3">{{ channelsSelected.channel_name }}</p>
+                <p class="channel-desc">{{ channelsSelected.description }}</p>
             </div>
+        </div>
 
-            <div class="top-header text-black fw-bolder">
-                <img src="./assets/img/yt.svg" alt="" draggable="false">
-                <p>Videos</p>
-            </div>
+        <div class="top-header text-black fw-bolder">
+            <img src="./assets/img/yt.svg" alt="" draggable="false">
+            <p>Videos</p>
+        </div>
 
+        <div>
             <div v-for="(video, count) in paginatedVideos" class="content rounded-3">
-                <span class="video-number fs-5 fw-bolder">{{ count + 1 + (currentPage * videosPerPage) }}</span>
-    
-                <div class="video-wrapper text-black">
-                    <img :src="video.video_thumbnail" :alt="video.video_thumbnail" class="thumbnail" draggable="false">
-    
-                    <div class="video-text">
-                        <p class="video-name fw-bolder" v-html="video.video_title"></p>
+                <div v-if="videoSelected">
+                    <div v-if="videoSelected.channel_id === video.channel_id"></div>
+                    <span class="video-number fs-5 fw-bolder">{{ count + 1 + (currentPage * videosPerPage) }}</span>
+        
+                    <div class="video-wrapper text-black">
+                        <img :src="video.video_thumbnail" :alt="video.video_thumbnail" class="thumbnail" draggable="false">
+        
+                        <div class="video-text">
+                            <p class="video-name fw-bolder" v-html="video.video_title"></p>
 
-                        <p class="video-desc">{{ video.video_desc }}</p>
-    
-                        <div class="play-btn-wrapper">
-                            <a :href="video.video_link" class="play-btn" target="_blank" rel="noopener noreferrer">
-                                <i class="fa-solid fa-play"></i>
-                            </a>
+                            <p class="video-desc">{{ video.video_desc }}</p>
+        
+                            <div class="play-btn-wrapper">
+                                <a :href="video.video_link" class="play-btn" target="_blank" rel="noopener noreferrer">
+                                    <i class="fa-solid fa-play"></i>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>    
             
-            <nav v-if="totalPages > 1" class="my-5 mx-24 flex justify-content-center">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item" :class="{ 'disabled': currentPage === 0 }">
-                        <a @click="changePageWithScroll(currentPage - 1)" class="page-btn page-link p-3" href="#" tabindex="-1">
-                            <i class="fa-solid fa-chevron-left"></i>
-                        </a>
-                    </li>
-            
-                    <li v-for="pageNumber in totalPages" :key="pageNumber" class="page-item">
-                        <a @click="changePageWithScroll(pageNumber - 1)" :class="currentPage === pageNumber - 1" class="page-btn page-link p-3 text-base" :href="'#page' + (pageNumber)">
-                            {{ pageNumber }}
-                        </a>
-                    </li>
-            
-                    <li class="page-item" :class="{ 'disabled': currentPage === totalPages - 1 }">
-                        <a @click="changePageWithScroll(currentPage + 1)" class="page-btn page-link p-3" href="#">
-                            <i class="fa-solid fa-chevron-right"></i>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </div>
+        <nav v-if="totalPages > 1" class="my-5 mx-24 flex justify-content-center">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" :class="{ 'disabled': currentPage === 0 }">
+                    <a @click="changePageWithScroll(currentPage - 1)" class="page-btn page-link p-3" href="#" tabindex="-1">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </a>
+                </li>
+        
+                <li v-for="pageNumber in totalPages" class="page-item">
+                    <a @click="changePageWithScroll(pageNumber - 1)" :class="currentPage === pageNumber - 1" class="page-btn page-link p-3 text-base" :href="'#page' + (pageNumber)">
+                        {{ pageNumber }}
+                    </a>
+                </li>
+        
+                <li class="page-item" :class="{ 'disabled': currentPage === totalPages - 1 }">
+                    <a @click="changePageWithScroll(currentPage + 1)" class="page-btn page-link p-3" href="#">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
     </div>
 </body>
 
@@ -77,11 +93,13 @@
         data: {
             channels: [],
             videos: [],
+            channelsSelected: [],
+            videoSelected: [],
             videosPerPage: 20,
             currentPage: parseInt(localStorage.getItem('currentPage')) || 0,
         },
         computed: {
-            totalPages() { return Math.ceil(this.videos.length / this.videosPerPage); },
+            totalPages() { return Math.ceil(100 / this.videosPerPage); },
             paginatedVideos() {
                 const start = this.currentPage * this.videosPerPage;
                 const end = start + this.videosPerPage;
@@ -89,14 +107,38 @@
             },
         },
         mounted() {
-            axios.get('youtube_channel_json.php')
+            axios.get(`youtube_channel_json.php`)
                 .then(response => {
-                    this.channels = response.data.youtube_channels;
-                    this.videos = response.data.youtube_channel_videos;
+                    const channelData = response.data.youtube_channels.find(channel => channel.id === 1);
+                    const videoData = response.data.youtube_channel_videos.find(video => video.channel_id === 1);
+                    if (channelData || videoData) {
+                        this.channelsSelected = channelData;  this.videoSelected = videoData;
+                        this.channels = response.data.youtube_channels;
+                        this.videos = response.data.youtube_channel_videos;
+                    }
                 })
                 .catch(error => { console.error(error); });
+
+            window.addEventListener('beforeunload', () => {
+                localStorage.setItem('currentPage', 0);
+            });
         },
         methods: {
+            selectChannel(channel) {
+                const id = channel.id;
+                
+                axios.get(`youtube_channel_json.php`)
+                .then(response => {
+                    const channelData = response.data.youtube_channels.find(channel => channel.id === id);
+                    const videoData = response.data.youtube_channel_videos.find(video => video.channel_id === id);
+   
+                    if (channelData) {
+                        this.channelsSelected = channelData; this.videoSelected = videoData;
+                        this.videos = response.data.youtube_channel_videos.filter(video => video.channel_id === id);
+                    }
+                })
+                .catch(error => { console.error(error); });
+            },
             prevPage() {
                 if (this.currentPage > 0) { this.currentPage--; }
             },
@@ -104,10 +146,9 @@
                 if (this.currentPage < this.totalPages - 1) { this.currentPage++; }
             },
             changePageWithScroll(pageNumber) {
-                this.currentPage = pageNumber;
-                localStorage.setItem('currentPage', pageNumber);
-
                 if (pageNumber >= 0 && pageNumber < this.totalPages) {
+                    this.currentPage = pageNumber;
+                    localStorage.setItem('currentPage', pageNumber);
                     this.scrollToTop();
                 }
             },
